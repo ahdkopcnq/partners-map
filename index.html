@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carte partenaires decilo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<section class="locator">
+  <div class="panel">
+    <div class="intro">
+      <p class="eyebrow">Réseau decilo</p>
+      <h1>Trouver un partenaire</h1>
+      <p>Recherchez un centre proche de chez vous pour réaliser vos empreintes d’oreilles.</p>
+    </div>
+
+    <div class="search-box">
+        <input id="searchInput" type="text" placeholder="Ville ou code postal" />
+        <button id="searchBtn">Rechercher</button>
+        <button id="geoBtn" class="secondary">Utiliser ma position</button>
+        <button id="resetBtn" class="secondary">Réinitialiser la recherche</button>
+      </div>
+
+    <div class="legend">
+      <span><b class="dot certified"></b>decilo Certified Partner</span>
+      <span><b class="dot ear"></b>Ear Impressions Partner</span>
+    </div>
+
+    <div id="list" class="partner-list"></div>
+  </div>
+
+  <div id="map"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="script.js"></script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA99vS9dilMniBjmF11LwQhfZuCc-9brAY&libraries=places&callback=initMap"
+  async
+  defer>
+</script>
+
+</body>
+</html>
