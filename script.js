@@ -92,58 +92,146 @@ function renderMarkers(data) {
 }
 
 function renderList(data) {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
-
-  data.forEach((partner, index) => {
-    const isCertified = (partner["Partner type"] || "").toLowerCase().includes("certified");
-
-    const card = document.createElement("div");
-    card.className = "partner-card";
-    card.innerHTML = `
-      <span class="badge ${isCertified ? "certified" : "ear"}">${partner["Partner type"] || "Partner"}</span>
-      <h3>${partner.Partner || ""}</h3>
-      <p>${formatAddress(partner.Address)}</p>
-    `;
-
-    card.addEventListener("click", () => {
-      openPartner(partner, markers[index]);
-      map.panTo(markers[index].getPosition());
-      map.setZoom(13);
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+  
+    data.forEach((partner, index) => {
+      const isCertified = (partner["Partner type"] || "")
+        .toLowerCase()
+        .includes("certified");
+  
+      const lat = partner.Latitude;
+      const lng = partner.Longitude;
+      const phone = partner.Phone || "";
+  
+      const directionsUrl =
+        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  
+      const phoneUrl =
+        phone ? `tel:${phone.replace(/\s/g, "")}` : "";
+  
+      const distanceHtml = partner.distance
+        ? `<p class="partner-distance">📍 ${partner.distance.toFixed(1)} km away</p>`
+        : "";
+  
+      const callButton = phone
+        ? `<a class="partner-btn partner-btn-light" href="${phoneUrl}">Call</a>`
+        : "";
+  
+      const card = document.createElement("div");
+      card.className = "partner-card";
+  
+      card.innerHTML = `
+        <span class="badge ${isCertified ? "certified" : "ear"}">
+          ${partner["Partner type"] || "Partner"}
+        </span>
+  
+        <h3>${partner.Partner || ""}</h3>
+  
+        <p>${formatAddress(partner.Address)}</p>
+  
+        ${distanceHtml}
+  
+        <div class="partner-actions">
+          <a
+            class="partner-btn"
+            href="${directionsUrl}"
+            target="_blank"
+            onclick="event.stopPropagation();">
+            Directions
+          </a>
+  
+          ${callButton.replace("<a ", '<a onclick="event.stopPropagation();" ')}
+        </div>
+      `;
+  
+      card.addEventListener("click", () => {
+        openPartner(partner, markers[index]);
+        map.panTo(markers[index].getPosition());
+        map.setZoom(13);
+      });
+  
+      list.appendChild(card);
     });
-
-    list.appendChild(card);
-  });
-}
+  }
 
 function openPartner(partner, marker) {
-  const lat = partner.Latitude;
-  const lng = partner.Longitude;
-  const phone = partner.Phone || "";
-  const website = partner.Website || "";
-  const email = partner.Mail || "";
 
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-  const phoneUrl = phone ? `tel:${phone.replace(/\s/g, "")}` : "";
-  const websiteUrl = website ? (website.startsWith("http") ? website : `https://${website}`) : "";
-
-  const content = `
-    <div class="info-window">
-      <h3>${partner.Partner || ""}</h3>
-      <p>${formatAddress(partner.Address)}</p>
-      ${phone ? `<p>📞 ${phone}</p>` : ""}
-      ${email ? `<p>✉️ ${email}</p>` : ""}
-      <div class="info-actions">
-        <a href="${directionsUrl}" target="_blank">Itinéraire</a>
-        ${phone ? `<a class="light" href="${phoneUrl}">Appeler</a>` : ""}
-        ${website ? `<a class="light" href="${websiteUrl}" target="_blank">Site web</a>` : ""}
+    const lat = partner.Latitude;
+    const lng = partner.Longitude;
+  
+    const phone = partner.Phone || "";
+    const website = partner.Website || "";
+    const email = partner.Mail || "";
+  
+    const isCertified =
+      (partner["Partner type"] || "")
+        .toLowerCase()
+        .includes("certified");
+  
+    const badge = isCertified
+      ? `<div class="info-badge certified">
+           ⭐ decilo Certified Partner
+         </div>`
+      : `<div class="info-badge ear">
+           Ear Impressions Partner
+         </div>`;
+  
+    const directionsUrl =
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  
+    const phoneUrl =
+      phone ? `tel:${phone.replace(/\s/g, "")}` : "";
+  
+    const websiteUrl =
+      website
+        ? (website.startsWith("http")
+            ? website
+            : `https://${website}`)
+        : "";
+  
+    const content = `
+      <div class="info-window">
+  
+        ${badge}
+  
+        <h3>${partner.Partner || ""}</h3>
+  
+        <p>${formatAddress(partner.Address)}</p>
+  
+        ${phone ? `<p>📞 ${phone}</p>` : ""}
+        ${email ? `<p>✉️ ${email}</p>` : ""}
+  
+        <div class="info-actions">
+  
+          <a href="${directionsUrl}"
+             target="_blank">
+             Directions
+          </a>
+  
+          ${phone ? `
+            <a class="light"
+               href="${phoneUrl}">
+               Call
+            </a>
+          ` : ""}
+  
+          ${website ? `
+            <a class="light"
+               href="${websiteUrl}"
+               target="_blank">
+               Website
+            </a>
+          ` : ""}
+  
+        </div>
+  
       </div>
-    </div>
-  `;
-
-  infoWindow.setContent(content);
-  infoWindow.open(map, marker);
-}
+    `;
+  
+    infoWindow.setContent(content);
+    infoWindow.open(map, marker);
+  }
 
 function formatAddress(address) {
   return (address || "").replace(/\n/g, "<br>");
@@ -192,7 +280,7 @@ function geocodeLocation(queryRaw) {
     },
     function(results, status) {
       if (status !== "OK" || !results.length) {
-        alert("Aucun lieu trouvé pour cette recherche.");
+        alert("No location found.");
         return;
       }
 
@@ -207,8 +295,8 @@ function geocodeLocation(queryRaw) {
       });
 
       if (!validResult) {
-        alert("Cette recherche est en dehors de la zone couverte.");
-        return;
+        alert("This location is outside the covered area.");
+                return;
       }
 
       const location = validResult.geometry.location;
@@ -249,8 +337,8 @@ function resetSearch() {
 
 function useGeolocation() {
   if (!navigator.geolocation) {
-    alert("La géolocalisation n'est pas disponible sur ce navigateur.");
-    return;
+    alert("Geolocation is not supported by this browser.");
+        return;
   }
 
   navigator.geolocation.getCurrentPosition(
@@ -263,7 +351,7 @@ function useGeolocation() {
       showClosestPartners(userPos.lat, userPos.lng);
     },
     () => {
-      alert("Impossible d'obtenir votre position.");
+        alert("Unable to retrieve your location.");
     }
   );
 }
