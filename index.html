@@ -11,16 +11,42 @@
     <section class="locator">
         <div class="panel">
           <div class="intro">
-            <p class="eyebrow">DECILO NETWORK</p>
-            <h1>Find a partner</h1>
-            <p>Find a nearby center to have your ear impressions taken.</p>
+            <p class="eyebrow">decilo Partner Network</p>
           </div>
       
           <div class="search-box">
-            <input id="searchInput" type="text" placeholder="City or postal code" />
-            <button id="searchBtn">Search</button>
-            <button id="geoBtn" class="secondary">Use my location</button>
-            <button id="resetBtn" class="secondary">Reset search</button>
+
+<div class="search-input-wrap">
+<span class="search-icon">
+  <svg viewBox="0 0 24 24">
+    <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
+  </svg>
+</span>
+
+  <input
+    id="searchInput"
+    type="text"
+    placeholder="City or postal code"
+  />
+
+  <button
+    id="clearSearchBtn"
+    class="clear-search-btn"
+    type="button">
+    ×
+  </button>
+</div>
+          
+            <button id="searchBtn">
+              <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/></svg></span>
+              Search
+            </button>
+          
+            <button id="geoBtn" class="secondary">
+              <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12A7 7 0 0 0 5 9c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
+              <span>Near me</span>
+                                    </button>
+          
           </div>
       
           <div class="legend">

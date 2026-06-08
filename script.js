@@ -5,6 +5,10 @@ let partners = [];
 let markers = [];
 let infoWindow;
 let geocoder;
+let isSearchMode = false;
+let currentSortedPartners = [];
+
+window.closePartnerPopup = () => infoWindow.close();
 
 function initMap() {
   map = new google.maps.Map(document.getElementById("map"), {
@@ -20,7 +24,29 @@ function initMap() {
 
   initAutocomplete();
   loadPartners();
+
+  map.addListener("dragstart", () => {
+    if (isSearchMode) {
+      showAllPartnersWithoutFit();
+    }
+  });
+
+  map.addListener("click", () => {
+    infoWindow.close();
+  });
+
 }
+
+function showAllPartnersWithoutFit() {
+    isSearchMode = false;
+    infoWindow.close();
+  
+    // Tous les marqueurs réapparaissent sur la carte
+    renderMarkers(currentSortedPartners, false);
+  
+    // La liste reste triée par distance
+    renderList(currentSortedPartners);
+  }
 
 function initAutocomplete() {
     const input = document.getElementById("searchInput");
@@ -61,37 +87,44 @@ function loadPartners() {
   });
 }
 
-function renderMarkers(data) {
-  markers.forEach(marker => marker.setMap(null));
-  markers = [];
-
-  data.forEach(partner => {
-    const lat = parseFloat(partner.Latitude);
-    const lng = parseFloat(partner.Longitude);
-    const isCertified = (partner["Partner type"] || "").toLowerCase().includes("certified");
-
-    const marker = new google.maps.Marker({
-      position: { lat, lng },
-      map,
-      title: partner.Partner,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: isCertified ? 9 : 7,
-        fillColor: isCertified ? "#b98a2d" : "#111111",
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-      },
+function renderMarkers(data, shouldFit = true) {
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+  
+    data.forEach(partner => {
+      const lat = parseFloat(partner.Latitude);
+      const lng = parseFloat(partner.Longitude);
+      const isCertified = (partner["Partner type"] || "").toLowerCase().includes("certified");
+  
+      const marker = new google.maps.Marker({
+        position: { lat, lng },
+        map,
+        title: partner.Partner,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: isCertified ? 9 : 7,
+          fillColor: isCertified ? "#b98a2d" : "#111111",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+      });
+  
+      marker.addListener("click", () => openPartner(partner, marker));
+      markers.push(marker);
     });
+  
+    if (shouldFit) {
+      fitMapToMarkers(markers);
+    }
+  }
+  
+  function renderMarkersWithoutFit(data) {
+    renderMarkers(data, false);
+  }
 
-    marker.addListener("click", () => openPartner(partner, marker));
-    markers.push(marker);
-  });
 
-  fitMapToMarkers(markers);
-}
-
-function renderList(data) {
+  function renderList(data) {
     const list = document.getElementById("list");
     list.innerHTML = "";
   
@@ -103,20 +136,40 @@ function renderList(data) {
       const lat = partner.Latitude;
       const lng = partner.Longitude;
       const phone = partner.Phone || "";
-  
-      const directionsUrl =
-        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-  
-      const phoneUrl =
-        phone ? `tel:${phone.replace(/\s/g, "")}` : "";
-  
-      const distanceHtml = partner.distance
-        ? `<p class="partner-distance">📍 ${partner.distance.toFixed(1)} km away</p>`
-        : "";
+      const email = partner.Mail || "";
+
+      const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      const phoneUrl = phone ? `tel:${phone.replace(/\s/g, "")}` : "";
+
+const contactSubject = encodeURIComponent("Appointment request via decilo");
+const contactBody = encodeURIComponent(
+`Dear,
+I found your contact details via the decilo partner network.
+I would like to book an appointment.
+Could you please let me know your availabilities?
+Thank you.
+Best regards`
+);
+
+const mailUrl = email
+  ? `mailto:${email}?subject=${contactSubject}&body=${contactBody}`
+  : "";
+
+const contactButton = email
+  ? `<a class="partner-btn" href="${mailUrl}" onclick="event.stopPropagation();">
+       <span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></span>
+       Contact
+     </a>`
+  : "";
+
   
       const callButton = phone
-        ? `<a class="partner-btn partner-btn-light" href="${phoneUrl}">Call</a>`
+        ? `<a class="partner-btn" href="${phoneUrl}" onclick="event.stopPropagation();">
+             <span class="card-icon"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.8L7.7 9.6a16 16 0 0 0 6.7 6.7l1.3-1.3a2 2 0 0 1 1.8-.6l2.8.5a2 2 0 0 1 1.7 2z"/></svg></span>
+             Call
+           </a>`
         : "";
+
   
       const card = document.createElement("div");
       card.className = "partner-card";
@@ -128,22 +181,31 @@ function renderList(data) {
   
         <h3>${partner.Partner || ""}</h3>
   
-        <p>${formatAddress(partner.Address)}</p>
+        <p class="partner-address">${formatAddress(partner.Address)}</p>
   
-        ${distanceHtml}
-  
-        <div class="partner-actions">
-          <a
-            class="partner-btn"
-            href="${directionsUrl}"
-            target="_blank"
-            onclick="event.stopPropagation();">
+        <div class="partner-actions-row">
+          <div class="partner-actions">
+
+${callButton}
+${contactButton}
+
+<a class="partner-btn partner-btn-light" href="${directionsUrl}" target="_blank" onclick="event.stopPropagation();">
+
+            <span class="card-icon"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2z"/></svg></span>
             Directions
           </a>
+          </div>
   
-          ${callButton.replace("<a ", '<a onclick="event.stopPropagation();" ')}
-        </div>
-      `;
+        ${
+          partner.distance
+            ? `<div class="partner-distance-inline">
+                 <span class="distance-pin">📍</span>
+                 ${partner.distance.toFixed(1)} km
+               </div>`
+            : ""
+        }
+      </div>
+    `;
   
       card.addEventListener("click", () => {
         openPartner(partner, markers[index]);
@@ -189,44 +251,90 @@ function openPartner(partner, marker) {
             ? website
             : `https://${website}`)
         : "";
+
+        const contactSubject = encodeURIComponent("Appointment request via decilo");
+const contactBody = encodeURIComponent(
+`Dear,
+I found your contact details via the decilo partner network.
+I would like to book an appointment.
+Could you please let me know your availabilities?
+Thank you.
+Best regards`
+);
+
+const mailUrl = email
+  ? `mailto:${email}?subject=${contactSubject}&body=${contactBody}`
+  : "";
   
-    const content = `
-      <div class="info-window">
-  
-        ${badge}
-  
-        <h3>${partner.Partner || ""}</h3>
+        const content = `
+        <div class="info-window">
+      
+<button class="custom-close"
+        onclick="window.closePartnerPopup()">
+</button>
+      
+          ${badge}
+      
+          <h3>${partner.Partner || ""}</h3>
   
         <p>${formatAddress(partner.Address)}</p>
   
-        ${phone ? `<p>📞 ${phone}</p>` : ""}
-        ${email ? `<p>✉️ ${email}</p>` : ""}
-  
-        <div class="info-actions">
-  
-          <a href="${directionsUrl}"
-             target="_blank">
-             Directions
-          </a>
-  
-          ${phone ? `
-            <a class="light"
-               href="${phoneUrl}">
-               Call
-            </a>
+        ${phone || email ? `
+            <div class="info-contact">
+              ${phone ? `<div>${phone}</div>` : ""}
+              ${email ? `<div>${email}</div>` : ""}
+            </div>
           ` : ""}
   
-          ${website ? `
-            <a class="light"
-               href="${websiteUrl}"
-               target="_blank">
-               Website
-            </a>
-          ` : ""}
-  
-        </div>
-  
-      </div>
+<div class="info-actions popup-actions">
+
+  ${phone ? `
+<a class="partner-btn partner-btn-light"
+       href="${phoneUrl}">
+      <span class="card-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.8L7.7 9.6a16 16 0 0 0 6.7 6.7l1.3-1.3a2 2 0 0 1 1.8-.6l2.8.5a2 2 0 0 1 1.7 2z"/>
+        </svg>
+      </span>
+      Call
+    </a>
+  ` : ""}
+
+  ${email ? `
+  <a class="partner-btn" href="${mailUrl}">
+    <span class="card-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 4h16v16H4z"/>
+        <path d="m22 6-10 7L2 6"/>
+      </svg>
+    </span>
+    Contact
+  </a>
+` : ""}
+
+<a class="partner-btn partner-btn-light popup-btn"
+   href="${directionsUrl}"
+   target="_blank">
+  <span class="card-icon">
+    <svg viewBox="0 0 24 24">
+      <path d="M22 2 11 13"/>
+      <path d="M22 2 15 22 11 13 2 9 22 2z"/>
+    </svg>
+  </span>
+  Directions
+</a>
+
+${/*
+  ${website ? `
+    <a class="partner-btn partner-btn-light popup-btn"
+       href="${websiteUrl}"
+       target="_blank">
+      Website
+    </a>
+  ` : ""}
+  */""}
+
+</div>
     `;
   
     infoWindow.setContent(content);
@@ -253,7 +361,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("geoBtn").addEventListener("click", useGeolocation);
-  document.getElementById("resetBtn").addEventListener("click", resetSearch);
 });
 
 function searchPartners() {
@@ -306,29 +413,34 @@ function geocodeLocation(queryRaw) {
 }
 
 function showClosestPartners(centerLat, centerLng) {
-  const closest = [...partners]
-    .map(p => ({
-      ...p,
-      distance: calculateDistance(
-        centerLat,
-        centerLng,
-        parseFloat(p.Latitude),
-        parseFloat(p.Longitude)
-      ),
-    }))
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, 10);
-
-  renderMarkers(closest);
-  renderList(closest);
-
-  map.setCenter({ lat: centerLat, lng: centerLng });
-  map.setZoom(11);
-}
+    isSearchMode = true;
+  
+    currentSortedPartners = [...partners]
+      .map(p => ({
+        ...p,
+        distance: calculateDistance(
+          centerLat,
+          centerLng,
+          parseFloat(p.Latitude),
+          parseFloat(p.Longitude)
+        ),
+      }))
+      .sort((a, b) => a.distance - b.distance);
+  
+    const closest = currentSortedPartners.slice(0, 10);
+  
+    renderMarkers(closest);
+    renderList(closest);
+  
+    map.setCenter({ lat: centerLat, lng: centerLng });
+    map.setZoom(11);
+  }
 
 function resetSearch() {
   document.getElementById("searchInput").value = "";
   infoWindow.close();
+  isSearchMode = false;
+  currentSortedPartners = [];
 
   renderMarkers(partners);
   renderList(partners);
@@ -373,3 +485,17 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
+
+const searchInput = document.getElementById("searchInput");
+const clearBtn = document.getElementById("clearSearchBtn");
+
+searchInput.addEventListener("input", () => {
+  clearBtn.style.display =
+    searchInput.value.trim() ? "block" : "none";
+});
+
+clearBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  clearBtn.style.display = "none";
+  resetSearch();
+});
