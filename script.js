@@ -144,15 +144,20 @@ function renderMarkers(data, shouldFit = true) {
 const contactSubject = encodeURIComponent("Appointment request via decilo");
 const contactBody = encodeURIComponent(
 `Dear,
+
 I found your contact details via the decilo partner network.
+
 I would like to book an appointment.
-Could you please let me know your availabilities?
+
+Could you please let me know your availability?
+
 Thank you.
+
 Best regards`
 );
 
 const mailUrl = email
-  ? `mailto:${email}?subject=${contactSubject}&body=${contactBody}`
+  ? `mailto:${encodeURIComponent(email)}?subject=${contactSubject}&body=${contactBody}`
   : "";
 
 const contactButton = email
@@ -207,11 +212,18 @@ ${contactButton}
       </div>
     `;
   
-      card.addEventListener("click", () => {
-        openPartner(partner, markers[index]);
-        map.panTo(markers[index].getPosition());
-        map.setZoom(13);
-      });
+card.addEventListener("click", () => {
+  openPartner(partner, markers[index]);
+  map.panTo(markers[index].getPosition());
+  map.setZoom(13);
+
+  if (window.innerWidth <= 900) {
+    document.getElementById("map").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+});
   
       list.appendChild(card);
     });
@@ -255,10 +267,15 @@ function openPartner(partner, marker) {
         const contactSubject = encodeURIComponent("Appointment request via decilo");
 const contactBody = encodeURIComponent(
 `Dear,
+
 I found your contact details via the decilo partner network.
+
 I would like to book an appointment.
-Could you please let me know your availabilities?
+
+Could you please let me know your availability?
+
 Thank you.
+
 Best regards`
 );
 
