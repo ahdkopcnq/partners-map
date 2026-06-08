@@ -145,15 +145,15 @@ const contactSubject = encodeURIComponent("Appointment request via decilo");
 const contactBody = encodeURIComponent(
 `Dear,
 
-I found your contact details via the decilo partner network.
+I found your contact details through the decilo partner network.
 
-I would like to book an appointment.
+I would like to schedule an appointment.
 
 Could you please let me know your availability?
 
-Thank you.
+Thank you in advance.
 
-Best regards`
+Best regards,`
 );
 
 const mailUrl = email
@@ -268,15 +268,15 @@ function openPartner(partner, marker) {
 const contactBody = encodeURIComponent(
 `Dear,
 
-I found your contact details via the decilo partner network.
+I found your contact details through the decilo partner network.
 
-I would like to book an appointment.
+I would like to schedule an appointment.
 
 Could you please let me know your availability?
 
-Thank you.
+Thank you in advance.
 
-Best regards`
+Best regards,`
 );
 
 const mailUrl = email
