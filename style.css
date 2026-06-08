@@ -967,3 +967,30 @@
     margin: 0 auto;
   }
 }
+
+.locator-title {
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: #111;
+  margin: 0 0 5px 0;
+}
+
+.locator-subtitle {
+  font-size: 20px;
+  line-height: 1;
+  color: #666;
+  margin: 0 0 5px 0;
+  max-width: 420px;
+}
+
+@media (max-width: 768px) {
+  .locator-title {
+    font-size: 28px;
+  }
+
+  .locator-subtitle {
+    font-size: 16px;
+  }
+}
