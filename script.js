@@ -94,15 +94,16 @@ function renderMarkers(data, shouldFit = true) {
     data.forEach(partner => {
       const lat = parseFloat(partner.Latitude);
       const lng = parseFloat(partner.Longitude);
-      const isCertified = (partner["Partner type"] || "").toLowerCase().includes("certified");
-  
+const isCertified = (partner["Partner type"] || "")
+  .toLowerCase()
+  .includes("in-store");  
       const marker = new google.maps.Marker({
         position: { lat, lng },
         map,
         title: partner.Partner,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: isCertified ? 9 : 7,
+          scale: isCertified ? 8 : 8,
           fillColor: isCertified ? "#b98a2d" : "#111111",
           fillOpacity: 1,
           strokeColor: "#ffffff",
@@ -131,7 +132,7 @@ function renderMarkers(data, shouldFit = true) {
     data.forEach((partner, index) => {
       const isCertified = (partner["Partner type"] || "")
         .toLowerCase()
-        .includes("certified");
+        .includes("in-store");
   
       const lat = partner.Latitude;
       const lng = partner.Longitude;
@@ -241,15 +242,15 @@ function openPartner(partner, marker) {
     const isCertified =
       (partner["Partner type"] || "")
         .toLowerCase()
-        .includes("certified");
+        .includes("in-store");
   
-    const badge = isCertified
-      ? `<div class="info-badge certified">
-           ⭐ decilo Certified Partner
-         </div>`
-      : `<div class="info-badge ear">
-           Ear Impressions Partner
-         </div>`;
+const badge = isCertified
+  ? `<div class="info-badge certified">
+       Online & In-Store Partner
+     </div>`
+: `<div class="info-badge ear">
+     Online Partner
+   </div>`;
   
     const directionsUrl =
       `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
